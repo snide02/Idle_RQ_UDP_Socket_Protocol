@@ -8,14 +8,14 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #define BufferLength 1024 //our buffer length
-
+#define PACKETSIZE 1024
 /** declare variable wsa **/
 WSADATA wsa;
 /** declare socket variables – needed for sockets on both client and sever **/
 struct sockaddr_in server;
 SOCKET s;
 int slen = sizeof(server);
-
+int recv_len;
 unsigned long noBlock;
 char buffer[BufferLength];
 
@@ -48,6 +48,37 @@ int main() {
 
     /***** WAIT FOR DATA ****/
     printf("\nWaiting for data...");
+
+    //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
+	while (1)
+	{
+		printf("Waiting for data...");
+		fflush(stdout);
+
+		//clear the buffer by filling null, it might have previously received data
+		memset(buffer, '\0', BufferLength);
+
+		//try to receive some data, this is a blocking call
+		if ((recv_len = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen)) == SOCKET_ERROR)
+		{
+			printf("recvfrom() failed with error code : %d", WSAGetLastError());
+			exit(EXIT_FAILURE);
+		}
+
+		//print details of the client/peer and the data received
+		printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
+		printf("Data: %s\n", buffer);
+
+		//now reply the client with the same data
+		if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
+		{
+			printf("sendto() failed with error code : %d", WSAGetLastError());
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	closesocket(s);
+	WSACleanup();
 
     return 0;
 }
