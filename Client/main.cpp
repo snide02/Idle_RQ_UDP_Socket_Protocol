@@ -18,7 +18,7 @@ SOCKET s;
 int slen = sizeof(si_other);
 
 unsigned long noBlock;
-char buffer[BufferLength];
+char buffer[BufferLength] = "hello world";
 
 int main() {
 
@@ -43,6 +43,7 @@ int main() {
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
+    /*****  Sending Data Section ****/
     if (sendto(s, buffer, sizeof(buffer), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR) {
         printf("sendto() failed with error code : %d", WSAGetLastError());
         exit(EXIT_FAILURE);
