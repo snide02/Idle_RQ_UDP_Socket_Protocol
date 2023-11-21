@@ -21,6 +21,7 @@ char buffer[BufferLength];
 
 int main() {
 
+    /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
         printf("Failed. Error Code : %d", WSAGetLastError());
@@ -28,6 +29,7 @@ int main() {
     }
     else printf("\nWINSOCK INITIALIZED");
 
+    /*****  CREATE SERVER SOCKET  ****/
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         printf("Could not create socket : %d", WSAGetLastError());
     }
