@@ -39,7 +39,15 @@ int main() {
     server.sin_family = AF_INET;
     server.sin_port = htons(80);
 
+    /***** BIND SOCKET ****/
+    if (bind(s, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
+        printf("Bind failed with error code : %d", WSAGetLastError());
+        exit(EXIT_FAILURE);
+    }
+    puts("\nSERVER SOCKET BIND SUCCESS");
 
+    /***** WAIT FOR DATA ****/
+    printf("\nWaiting for data...");
 
     return 0;
 }
