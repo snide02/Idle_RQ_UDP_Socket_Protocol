@@ -7,8 +7,17 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
+#define BufferLength 1024 //our buffer length
+
 /** declare variable wsa **/
 WSADATA wsa;
+/** declare socket variables – needed for sockets on both client and sever **/
+struct sockaddr_in server;
+SOCKET s;
+int slen = sizeof(server);
+
+unsigned long noBlock;
+char buffer[BufferLength];
 
 int main() {
 
@@ -19,7 +28,14 @@ int main() {
     }
     else printf("\nWINSOCK INITIALIZED");
 
-
+    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
+        printf("Could not create socket : %d", WSAGetLastError());
+    }
+    else printf("\nUDP SERVER SOCKET CREATED");
+    
+    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // or INADDR_ANY
+    server.sin_family = AF_INET;
+    server.sin_port = htons(80);
 
 
 
