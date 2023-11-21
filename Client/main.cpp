@@ -1,3 +1,5 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
@@ -37,7 +39,7 @@ int main() {
     /*****  INITIALIZE SOCKET STRUCT   - Non Blocking Client ****/
     noBlock = 1;
     ioctlsocket(s, FIONBIO, &noBlock);
-    si_other.sin_addr.s_addr = inet_addr("127.0.0.1");
+    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //current IP address is a dummy address, need to add actual address
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
