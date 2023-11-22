@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #include "main.h"
+#include <iostream>
 #pragma comment(lib, "ws2_32.lib")
 
 #define BufferLength 1024
@@ -20,14 +21,20 @@ int slen = sizeof(si_other);
 
 unsigned long noBlock;
 //char buffer[BufferLength] = "hello world";
+
+ /**file variable **/
 unsigned long fileLen; // length of image file
 FILE *fp; // file pointer
 char *buffer; // pointer to character array
 
+char fileName[BufferLength] = "test.jpg";
+
+
 int main() {
 
     //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
-    fp = fopen("C:\\test.jpg", "rb");
+    fp = fopen(fileName, "rb");
+    
     if (fp == NULL) {
         printf("\n Error Opening Image - read");
         fclose(fp);
@@ -48,6 +55,7 @@ int main() {
     /********* READ FILE DATA INTO BUFFER AND CLOSE FILE *************/
     fread(buffer, fileLen, 1, fp);
     fclose(fp);
+    printf("\nFile Length:  %d \n", fileLen);
 
     /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
@@ -71,6 +79,13 @@ int main() {
     si_other.sin_port = htons(80);
 
     /*****  Sending Data Section ****/
+    if (sendto(s, fileName, fileLen, 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR) {
+        printf("sendto() failed with error code : %d", WSAGetLastError());
+        exit(EXIT_FAILURE);
+    }
+    else  printf("\nsent File Information");
+
+
     if (sendto(s, buffer, sizeof(buffer), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR) {
         printf("sendto() failed with error code : %d", WSAGetLastError());
         exit(EXIT_FAILURE);
