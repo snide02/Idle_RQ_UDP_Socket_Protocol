@@ -19,6 +19,8 @@ int recv_len;
 unsigned long noBlock;
 char buffer[BufferLength];
 
+char fileName[9320];
+
 int main() {
 
     /****** INITIALIZING WINSOCK ***********/
@@ -59,6 +61,8 @@ int main() {
 		memset(buffer, '\0', BufferLength);
 
 		//try to receive some data, this is a blocking call
+        recvfrom(s, fileName, 9320, 0, (struct sockaddr*)&server, &slen);
+
 		if ((recv_len = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen)) == SOCKET_ERROR)
 		{
 			printf("recvfrom() failed with error code : %d", WSAGetLastError());

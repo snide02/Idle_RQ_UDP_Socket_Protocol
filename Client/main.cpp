@@ -90,7 +90,7 @@ int main() {
         printf("sendto() failed with error code : %d", WSAGetLastError());
         exit(EXIT_FAILURE);
     }
-    else  printf("\nsent buffer");      
+    else  printf("\nsent buffer");  
 
 
 
