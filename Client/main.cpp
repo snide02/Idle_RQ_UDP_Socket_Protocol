@@ -1,4 +1,5 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,9 +19,35 @@ SOCKET s;
 int slen = sizeof(si_other);
 
 unsigned long noBlock;
-char buffer[BufferLength] = "hello world";
+//char buffer[BufferLength] = "hello world";
+unsigned long fileLen; // length of image file
+FILE *fp; // file pointer
+char *buffer; // pointer to character array
 
 int main() {
+
+    //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
+    fp = fopen("C:\\test.jpg", "rb");
+    if (fp == NULL) {
+        printf("\n Error Opening Image - read");
+        fclose(fp);
+        exit(0);
+    }
+
+    /*** ALLOCATE MEMORY (BUFFER) TO HOLD IMAGE *****/
+    fseek(fp, 0, SEEK_END); //go to EOF
+    fileLen = ftell(fp); // determine length
+    fseek(fp, 0, SEEK_SET); //reset fp
+    buffer = (char*)malloc(fileLen + 1); //allocated memory
+    if (!buffer) {
+        printf("\n memory error allocating buffer");
+        fclose(fp);
+        return 1;
+    }
+
+    /********* READ FILE DATA INTO BUFFER AND CLOSE FILE *************/
+    fread(buffer, fileLen, 1, fp);
+    fclose(fp);
 
     /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
