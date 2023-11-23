@@ -1,5 +1,7 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
@@ -7,7 +9,7 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#define BufferLength 1024 //our buffer length
+#define BufferLength 9319 //our buffer length
 #define PACKETSIZE 1024
 /** declare variable wsa **/
 WSADATA wsa;
@@ -19,7 +21,8 @@ int recv_len;
 unsigned long noBlock;
 char buffer[BufferLength];
 
-char fileName[9320];
+//char fileLen[9320];
+
 
 int main() {
 
@@ -61,18 +64,26 @@ int main() {
 		memset(buffer, '\0', BufferLength);
 
 		//try to receive some data, this is a blocking call
-        recvfrom(s, fileName, 9320, 0, (struct sockaddr*)&server, &slen);
 
-		if ((recv_len = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen)) == SOCKET_ERROR)
-		{
-			printf("recvfrom() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
+
+
+        recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
+        std::string filename = buffer;
+        std::ofstream outputFile(filename, std::ios::binary);
+        recv_len = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
+        if (recv_len > 0)
+        {
+            outputFile.write(buffer, recv_len);
+            printf("File received and saved");
+        }
+        else
+            printf("error receiving file");
+
 
 		//print details of the client/peer and the data received
 		printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
 		printf("Data: %s\n", buffer);
-
+        //printf("\n %s", fileLen);
 		//now reply the client with the same data
 		if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
 		{

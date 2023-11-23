@@ -1,6 +1,8 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <winsock2.h>
@@ -10,7 +12,7 @@
 #include <iostream>
 #pragma comment(lib, "ws2_32.lib")
 
-#define BufferLength 1024
+#define BufferLength 9319
 
 /** declare variable wsa **/
 WSADATA wsa;
@@ -28,7 +30,6 @@ FILE *fp; // file pointer
 char *buffer; // pointer to character array
 
 char fileName[BufferLength] = "test.jpg";
-
 
 int main() {
 
@@ -78,21 +79,30 @@ int main() {
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
-    /*****  Sending Data Section ****/
-    if (sendto(s, fileName, fileLen, 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR) {
-        printf("sendto() failed with error code : %d", WSAGetLastError());
-        exit(EXIT_FAILURE);
+
+
+
+
+    std::string fileName = "test.jpg";
+    std::ifstream inputFile(fileName, std::ios::binary);
+
+    if (!inputFile.is_open()) {
+        std::cerr << "Error Opening file: " << fileName << std::endl;
+        closesocket(s);
+        WSACleanup();
+        return 1;
     }
-    else  printf("\nsent File Information");
 
+    char buffer[BufferLength];
 
-    if (sendto(s, buffer, sizeof(buffer), 0, (struct sockaddr*)&si_other, slen) == SOCKET_ERROR) {
-        printf("sendto() failed with error code : %d", WSAGetLastError());
-        exit(EXIT_FAILURE);
-    }
-    else  printf("\nsent buffer");  
+    sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+    inputFile.read(buffer, BufferLength);
+    sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+    std::cout << "File sent successfully" << std::endl;
 
-
+    inputFile.close();
+    closesocket(s);
+    WSACleanup();
 
 
     return 0;
