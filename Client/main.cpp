@@ -16,7 +16,7 @@
 
 /** declare variable wsa **/
 WSADATA wsa;
-/** declare socket variables ï¿½ needed for sockets on both client and sever **/
+/** declare socket variables – needed for sockets on both client and sever **/
 struct sockaddr_in si_other;
 SOCKET s;
 int slen = sizeof(si_other);
@@ -33,33 +33,9 @@ char fileName[BufferLength] = "test.jpg";
 
 int main() {
 
-    /** declare variable wsa **/
-    WSADATA wsa;
-    /** declare socket variables ï¿½ needed for sockets on both client and sever **/
-    struct sockaddr_in si_other;
-    SOCKET s;
-    int slen = sizeof(si_other);
-
-    unsigned long noBlock;
-    //char buffer[BufferLength] = "hello world";
-
-    /****** INITIALIZING WINSOCK ***********/
-    printf("\n****** INITIALIZING WINSOCK ***********");
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        printf("Failed. Error Code : %d", WSAGetLastError());
-        return 1;
-    }
-    else printf("\nWINSOCK INITIALIZED");
-
-     /**file variable **/
-    unsigned long fileLen; // length of image file
-    FILE* fp; // file pointer
-    char* buffer; // pointer to character array
-
-    char fileName[BufferLength] = "test.jpg";
-
     //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
-    fp = fopen("test.jpg", "rb");
+    fp = fopen(fileName, "rb");
+    
     if (fp == NULL) {
         printf("\n Error Opening Image - read");
         fclose(fp);
@@ -80,10 +56,15 @@ int main() {
     /********* READ FILE DATA INTO BUFFER AND CLOSE FILE *************/
     fread(buffer, fileLen, 1, fp);
     fclose(fp);
-
     printf("\nFile Length:  %d \n", fileLen);
 
-    
+    /****** INITIALIZING WINSOCK ***********/
+    printf("\n****** INITIALIZING WINSOCK ***********");
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        printf("Failed. Error Code : %d", WSAGetLastError());
+        return 1;
+    }
+    else printf("\nWINSOCK INITIALIZED");
 
     /*****  CREATE CLIENT SOCKET  ****/
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {

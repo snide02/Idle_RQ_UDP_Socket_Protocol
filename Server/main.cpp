@@ -1,5 +1,4 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
 #include <fstream>
@@ -10,31 +9,22 @@
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#define BufferLength 9319//1024 //our buffer length
+#define BufferLength 9319 //our buffer length
 #define PACKETSIZE 1024
+/** declare variable wsa **/
+WSADATA wsa;
+/** declare socket variables – needed for sockets on both client and sever **/
+struct sockaddr_in server;
+SOCKET s;
+int slen = sizeof(server);
+int recv_len;
+unsigned long noBlock;
+char buffer[BufferLength];
 
 //char fileLen[9320];
 
 
 int main() {
-
-    /** declare variable wsa **/
-    WSADATA wsa;
-    /** declare socket variables ï¿½ needed for sockets on both client and sever **/
-    struct sockaddr_in server;
-    SOCKET s;
-    int slen = sizeof(server);
-    int recv_len;
-    unsigned long noBlock;
-    char buffer[BufferLength];
-
-    char fileName[9320];
-
-    /**file variable **/
-    unsigned long fileLen = 9319;      // length of image file
-    FILE* fp;                         // file pointer
-    //char* buffer;                    // pointer to character array
-
 
     /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
@@ -74,7 +64,6 @@ int main() {
 		memset(buffer, '\0', BufferLength);
 
 		//try to receive some data, this is a blocking call
-        recvfrom(s, fileName, fileLen, 0, (struct sockaddr*)&server, &slen);
 
 
 
@@ -94,31 +83,17 @@ int main() {
 		//print details of the client/peer and the data received
 		printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
 		printf("Data: %s\n", buffer);
-
-        /*********** write contents of buffer to a file ************/
-        fp = fopen("test2.jpg", "wb");
-        if (fp == NULL)
-        {
-            printf("\nError Opening Image-write");
-            fclose(fp);
-            exit(0);
-        }
-        else printf("\nfile opened for writing");
-        fwrite(buffer, fileLen, 1, fp);
-        fclose(fp);
-        printf("\nc SAVED image, press any key");
-
+        //printf("\n %s", fileLen);
 		//now reply the client with the same data
 		if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
 		{
 			printf("sendto() failed with error code : %d", WSAGetLastError());
 			exit(EXIT_FAILURE);
 		}
-
 	}
 
-    closesocket(s);
-    WSACleanup();
+	closesocket(s);
+	WSACleanup();
 
     return 0;
 }
