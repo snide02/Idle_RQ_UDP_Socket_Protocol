@@ -54,7 +54,13 @@ int main() {
     /***** WAIT FOR DATA ****/
     printf("\nWaiting for data...");
 
-    //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
+    recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
+    std::string filename = buffer;
+    std::ofstream outputFile(filename, std::ios::binary);
+    int seqNum = 0;
+   
+
+
 	while (1)
 	{
 		printf("Waiting for data...");
@@ -65,33 +71,29 @@ int main() {
 
 		//try to receive some data, this is a blocking call
 
-
-
-        recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
-        std::string filename = buffer;
-        std::ofstream outputFile(filename, std::ios::binary);
-        recv_len = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
-        if (recv_len > 0)
+        int bytesRead = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
+        if (bytesRead <= 0)
         {
-            outputFile.write(buffer, recv_len);
-            printf("File received and saved");
+            break;
         }
-        else
-            printf("error receiving file");
+        int receivedSeqNum;
+        memcpy(&receivedSeqNum, buffer, sizeof(int));
 
+        if (receivedSeqNum == seqNum) {
+            outputFile.write(buffer + sizeof(int), bytesRead - sizeof(int));
 
-		//print details of the client/peer and the data received
-		printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
-		printf("Data: %s\n", buffer);
-        //printf("\n %s", fileLen);
-		//now reply the client with the same data
-		if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
-		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
+            sendto(s, (char*)seqNum, sizeof(int), 0, (struct sockaddr*)&server, slen);
+
+            seqNum++;
+        }
+        else {
+            sendto(s, (char*)seqNum, sizeof(int), 0, (struct sockaddr*)&server, slen);
+        }
+
 	}
 
+    printf("Success");
+    outputFile.close();
 	closesocket(s);
 	WSACleanup();
 

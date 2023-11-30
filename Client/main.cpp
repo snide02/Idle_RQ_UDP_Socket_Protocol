@@ -96,9 +96,26 @@ int main() {
     char buffer[BufferLength];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
-    inputFile.read(buffer, BufferLength);
-    sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
-    std::cout << "File sent successfully" << std::endl;
+    int seqNum = 0;
+
+    while (!inputFile.eof()) {
+        inputFile.read(buffer + sizeof(int), BufferLength - sizeof(int));
+        int bytesRead = static_cast<int>(inputFile.gcount());
+
+        memcpy(buffer, &seqNum, sizeof(int));
+
+        sendto(s, buffer, bytesRead + sizeof(int), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+        int ack;
+        recvfrom(s, (char *)&ack, sizeof(int), 0, nullptr, nullptr);
+
+        if (ack != seqNum) {
+            --seqNum;
+        }
+        else {
+            seqNum++;
+        }
+    }
+   
 
     inputFile.close();
     closesocket(s);
