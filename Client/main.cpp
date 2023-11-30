@@ -98,6 +98,7 @@ int main() {
     char buffer[BufferLength];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+//<<<<<<< HEAD
 
     for (int i = 1; i <= numPackets; i++) {
         inputFile.read(buffer + sizeof(int), BufferLength - sizeof(int));
@@ -135,6 +136,11 @@ int main() {
         }
     }
    */
+//=======
+    inputFile.read(buffer, BufferLength);
+    sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+    std::cout << "File sent successfully" << std::endl;
+//>>>>>>> parent of 06163c2 (sends Acks)
 
     inputFile.close();
     closesocket(s);
