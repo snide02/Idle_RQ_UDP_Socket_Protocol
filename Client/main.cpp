@@ -13,6 +13,7 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #define BufferLength 9319
+#define PacketSize 1024
 
 /** declare variable wsa **/
 WSADATA wsa;
@@ -30,6 +31,9 @@ FILE *fp; // file pointer
 char *buffer; // pointer to character array
 
 char fileName[BufferLength] = "test.jpg";
+
+int numPackets;
+char sendData;
 
 int main() {
 
@@ -58,13 +62,16 @@ int main() {
     fclose(fp);
     printf("\nFile Length:  %d \n", fileLen);
 
+    numPackets = fileLen / PacketSize + 1; //extra packet for the remaining data that doesn't fit into a whole packet.
+    printf("Number of Packets: %d\n", numPackets);
+
     /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
         printf("Failed. Error Code : %d", WSAGetLastError());
         return 1;
     }
-    else printf("\nWINSOCK INITIALIZED");
+    else printf("\nWINSOCK INITIALIZED\n");
 
     /*****  CREATE CLIENT SOCKET  ****/
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
@@ -94,10 +101,24 @@ int main() {
     }
 
     char buffer[BufferLength];
+    char packet[PacketSize];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     inputFile.read(buffer, BufferLength);
-    sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+    //sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
+    //std::cout << "File sent successfully" << std::endl;
+
+
+    for (int i = 0; i < numPackets; i++) {
+        int j = 1;
+        while (j < PacketSize) {
+            packet[j] = buffer[j + PacketSize * i];
+            j += 1;
+        }
+        sendto(s, packet,PacketSize, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+        printf("sent packet #%d\n", i);
+    }
+    
     std::cout << "File sent successfully" << std::endl;
 
     inputFile.close();
