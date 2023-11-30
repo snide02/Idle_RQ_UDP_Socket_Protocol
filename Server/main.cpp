@@ -20,12 +20,12 @@ int slen = sizeof(server);
 int recv_len;
 unsigned long noBlock;
 char buffer[BufferLength];
-
+char NewFile[BufferLength];
+int NewFileLength = 0;
 //char fileLen[9320];
 
 
 int main() {
-
     /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
@@ -39,7 +39,7 @@ int main() {
         printf("Could not create socket : %d", WSAGetLastError());
     }
     else printf("\nUDP SERVER SOCKET CREATED");
-    
+
     server.sin_addr.s_addr = inet_addr("127.0.0.1"); // or INADDR_ANY
     server.sin_family = AF_INET;
     server.sin_port = htons(80);
@@ -54,46 +54,75 @@ int main() {
     /***** WAIT FOR DATA ****/
     printf("\nWaiting for data...");
 
+    printf("Waiting for data...");
+    fflush(stdout);
+
+    //clear the buffer by filling null, it might have previously received data
+    memset(buffer, '\0', BufferLength);
+
+    //try to receive some data, this is a blocking call
+
+    recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
+    std::string filename = buffer;
+    std::ofstream outputFile(filename, std::ios::binary);
+    int count = 0;
     //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
-	while (1)
-	{
-		printf("Waiting for data...");
-		fflush(stdout);
+    while (count<10)
+    {
+        printf("Waiting for data...");
+        fflush(stdout);
 
-		//clear the buffer by filling null, it might have previously received data
-		memset(buffer, '\0', BufferLength);
+        //clear the buffer by filling null, it might have previously received data
+        memset(buffer, '\0', BufferLength);
 
-		//try to receive some data, this is a blocking call
-
-
-
-        recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
-        std::string filename = buffer;
-        std::ofstream outputFile(filename, std::ios::binary);
-        recv_len = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
-        if (recv_len > 0)
-        {
-            outputFile.write(buffer, recv_len);
-            printf("File received and saved");
+        //recieve packet from client
+        recv_len = recvfrom(s, buffer, PACKETSIZE, 0, (struct sockaddr*)&server, &slen);
+        NewFileLength = NewFileLength + recv_len;
+        int i = 0;
+        //for packet 1-9
+        if (count < 9) {
+            while (i < PACKETSIZE) {
+                NewFile[i + count * PACKETSIZE] = buffer[i];
+                i++;
+            }
+            printf("Packet Length %d \n", recv_len);
         }
-        else
-            printf("error receiving file");
+        //for packet 10
+        if (count == 9) {
+            while (i < 10*PACKETSIZE-BufferLength) {
+                NewFile[i + count * PACKETSIZE] = buffer[i];
+                i++;
+            }
+            printf("Packet Length %d \n", recv_len);
+        }
+        
 
-
-		//print details of the client/peer and the data received
-		printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
-		printf("Data: %s\n", buffer);
+            //print details of the client/peer and the data received
+        printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
+        printf("Data: %s\n", buffer);
         //printf("\n %s", fileLen);
-		//now reply the client with the same data
-		if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
-		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
-	}
+        //now reply the client with the same data
+        if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
+        {
+            printf("sendto() failed with error code : %d", WSAGetLastError());
+            exit(EXIT_FAILURE);
+        }
+        count++;
+    }
 
-	closesocket(s);
-	WSACleanup();
+    //reaseble packet 
+    printf("File Length %d", NewFileLength);
+    if (NewFileLength > 0)
+           {
+               outputFile.write(NewFile, NewFileLength);
+               printf("File received and saved");
+           }
+           else
+               printf("error receiving file"); 
+
+
+    closesocket(s);
+    WSACleanup();
 
     return 0;
 }

@@ -108,15 +108,25 @@ int main() {
     //sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     //std::cout << "File sent successfully" << std::endl;
 
-
+    //break file on buffer into packs then send them
     for (int i = 0; i < numPackets; i++) {
-        int j = 1;
-        while (j < PacketSize) {
-            packet[j] = buffer[j + PacketSize * i];
-            j += 1;
-        }
-        sendto(s, packet,PacketSize, 0, (struct sockaddr*)&si_other, sizeof(si_other));
-        printf("sent packet #%d\n", i);
+       int j = 0;
+       if (i < 9) { //for packets 1-9
+           while (j < PacketSize) {
+               packet[j] = buffer[j + PacketSize * i];
+               j += 1;
+           }
+           sendto(s, packet, PacketSize, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+           printf("sent packet #%d\n", i+1);
+       }
+       if (i == 9) { //for packet 10
+           while (j < 10 * PacketSize - BufferLength) {
+               packet[j] = buffer[j + PacketSize * i];
+               j += 1;
+           }
+           sendto(s, packet, 10 * PacketSize - BufferLength, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+           printf("sent packet #%d\n", i + 1);
+       }
     }
     
     std::cout << "File sent successfully" << std::endl;
