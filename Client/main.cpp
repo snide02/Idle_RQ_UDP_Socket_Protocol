@@ -101,7 +101,7 @@ int main() {
     }
 
     char buffer[BufferLength];
-    char packet[BufferLength];
+    char packet[PacketSize + sizeof(int)];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     inputFile.read(buffer, BufferLength);
