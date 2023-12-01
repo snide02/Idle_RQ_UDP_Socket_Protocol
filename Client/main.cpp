@@ -101,7 +101,7 @@ int main() {
     }
 
     char buffer[BufferLength];
-    char packet[PacketSize];
+    char packet[BufferLength];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     inputFile.read(buffer, BufferLength);
@@ -116,16 +116,21 @@ int main() {
                packet[j] = buffer[j + PacketSize * i];
                j += 1;
            }
-           sendto(s, packet, PacketSize, 0, (struct sockaddr*)&si_other, sizeof(si_other));
-           printf("sent packet #%d\n", i+1);
+
+           packet[PacketSize + 1] = char(i);
+           printf("\npacket[%d] = %d", PacketSize + 1, packet[PacketSize + 1]);
+           sendto(s, packet, PacketSize + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+           printf("\nsent packet #%d\n", i);
        }
        if (i == 9) { //for packet 10
            while (j < 10 * PacketSize - BufferLength) {
                packet[j] = buffer[j + PacketSize * i];
                j += 1;
            }
-           sendto(s, packet, 10 * PacketSize - BufferLength, 0, (struct sockaddr*)&si_other, sizeof(si_other));
-           printf("sent packet #%d\n", i + 1);
+           packet[10 * PacketSize - BufferLength + 1] = i;
+           printf("\npacket[%d] = %d", 10 * PacketSize - BufferLength + 1, i);
+           sendto(s, packet, 10 * PacketSize - BufferLength + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+           printf("\nsent packet #%d\n", i);
        }
     }
     

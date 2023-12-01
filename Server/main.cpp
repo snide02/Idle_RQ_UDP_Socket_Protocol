@@ -53,8 +53,6 @@ int main() {
 
     /***** WAIT FOR DATA ****/
     printf("\nWaiting for data...");
-
-    printf("Waiting for data...");
     fflush(stdout);
 
     //clear the buffer by filling null, it might have previously received data
@@ -76,30 +74,50 @@ int main() {
         memset(buffer, '\0', BufferLength);
 
         //recieve packet from client
-        recv_len = recvfrom(s, buffer, PACKETSIZE, 0, (struct sockaddr*)&server, &slen);
-        NewFileLength = NewFileLength + recv_len;
-        int i = 0;
-        //for packet 1-9
-        if (count < 9) {
-            while (i < PACKETSIZE) {
-                NewFile[i + count * PACKETSIZE] = buffer[i];
-                i++;
-            }
-            printf("Packet Length %d \n", recv_len);
-        }
-        //for packet 10
+        recv_len = recvfrom(s, buffer, PACKETSIZE + 2, 0, (struct sockaddr*)&server, &slen);
+
+        int seqNum;
+        int AckNum;
         if (count == 9) {
-            while (i < 10*PACKETSIZE-BufferLength) {
-                NewFile[i + count * PACKETSIZE] = buffer[i];
-                i++;
+            seqNum = buffer[10 * PACKETSIZE - BufferLength + 1];
+        }
+        else {
+            seqNum = buffer[PACKETSIZE + 1];
+        }
+        printf("\nSequence Number: %d", seqNum);
+        printf("\nCount: %d", count);
+
+        if (count == seqNum) {
+
+            AckNum = seqNum;
+            sendto(s, (const char*)AckNum, PACKETSIZE, 0, (struct sockaddr*)&server, slen);
+            printf("\nAck #%d sending to Client\n", AckNum);
+
+            /**** COMBINE PACKET BITS ****/
+            NewFileLength = NewFileLength + recv_len;
+            int i = 0;
+            //for packet 1-9
+            if (count < 9) {
+                while (i < PACKETSIZE) {
+                    NewFile[i + count * PACKETSIZE] = buffer[i];
+                    i++;
+                }
+                printf("\nPacket Length %d \n", recv_len);
             }
-            printf("Packet Length %d \n", recv_len);
+            //for packet 10
+            if (count == 9) {
+                while (i < 10 * PACKETSIZE - BufferLength) {
+                    NewFile[i + count * PACKETSIZE] = buffer[i];
+                    i++;
+                }
+                printf("\nPacket Length %d \n", recv_len);
+            }
         }
         
 
             //print details of the client/peer and the data received
-        printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
-        printf("Data: %s\n", buffer);
+        //printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
+        //printf("Data: %s\n", buffer);
         //printf("\n %s", fileLen);
         //now reply the client with the same data
         if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
