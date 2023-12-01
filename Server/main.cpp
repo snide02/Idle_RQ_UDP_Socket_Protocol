@@ -24,6 +24,7 @@ char NewFile[BufferLength];
 int NewFileLength = 0;
 //char fileLen[9320];
 
+int count = 0;
 
 int main() {
     /****** INITIALIZING WINSOCK ***********/
@@ -63,7 +64,7 @@ int main() {
     recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
     std::string filename = buffer;
     std::ofstream outputFile(filename, std::ios::binary);
-    int count = 0;
+    
     //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
     while (count<10)
     {
@@ -75,7 +76,7 @@ int main() {
 
         //recieve packet from client
         recv_len = recvfrom(s, buffer, PACKETSIZE + 2, 0, (struct sockaddr*)&server, &slen);
-
+        
         int seqNum;
         int AckNum;
         if (count == 9) {
@@ -88,9 +89,8 @@ int main() {
         printf("\nCount: %d", count);
 
         if (count == seqNum) {
-
             AckNum = seqNum;
-            sendto(s, (const char*)AckNum, PACKETSIZE, 0, (struct sockaddr*)&server, slen);
+            sendto(s, (char*)&AckNum, sizeof(AckNum), 0, (struct sockaddr*)&server, slen);
             printf("\nAck #%d sending to Client\n", AckNum);
 
             /**** COMBINE PACKET BITS ****/
@@ -112,6 +112,7 @@ int main() {
                 }
                 printf("\nPacket Length %d \n", recv_len);
             }
+            count++;
         }
         
 
@@ -120,12 +121,12 @@ int main() {
         //printf("Data: %s\n", buffer);
         //printf("\n %s", fileLen);
         //now reply the client with the same data
-        if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
+        /*if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
         {
             printf("sendto() failed with error code : %d", WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-        count++;
+        */
     }
 
     //reaseble packet 
@@ -137,6 +138,7 @@ int main() {
            }
            else
                printf("error receiving file"); 
+
 
 
     closesocket(s);
