@@ -13,7 +13,7 @@
 #define PACKETSIZE 1024
 /** declare variable wsa **/
 WSADATA wsa;
-/** declare socket variables � needed for sockets on both client and sever **/
+/** declare socket variables – needed for sockets on both client and sever **/
 struct sockaddr_in server;
 SOCKET s;
 int slen = sizeof(server);
@@ -24,7 +24,6 @@ char NewFile[BufferLength];
 int NewFileLength = 0;
 //char fileLen[9320];
 
-int count = 0;
 
 int main() {
 
@@ -65,9 +64,9 @@ int main() {
     recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
     std::string filename = buffer;
     std::ofstream outputFile(filename, std::ios::binary);
-    
+    int count = 0;
     //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
-    while (count<10)
+    while (count < 10)
     {
         printf("Waiting for data...");
         fflush(stdout);
@@ -77,10 +76,10 @@ int main() {
 
         //recieve packet from client
         recv_len = recvfrom(s, buffer, PACKETSIZE + 2, 0, (struct sockaddr*)&server, &slen);
-        
+
         int seqNum;
         int AckNum;
-        
+
         char recievedSequenceNumb = (char)buffer[recv_len - 1] + 48;
         printf("\n the sequence number received is %c", recievedSequenceNumb);
 
@@ -121,33 +120,32 @@ int main() {
 
         }
 
-      
-       
-        
 
-            //print details of the client/peer and the data received
-        //printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
-        //printf("Data: %s\n", buffer);
-        //printf("\n %s", fileLen);
-        //now reply the client with the same data
-        /*if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
+
+
+
+        //print details of the client/peer and the data received
+    //printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
+    //printf("Data: %s\n", buffer);
+    //printf("\n %s", fileLen);
+    //now reply the client with the same data
+        if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
         {
             printf("sendto() failed with error code : %d", WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-        */
+        count++;
     }
 
     //reaseble packet 
     printf("File Length %d", NewFileLength);
     if (NewFileLength > 0)
-           {
-               outputFile.write(NewFile, NewFileLength);
-               printf("File received and saved");
-           }
-           else
-               printf("error receiving file"); 
-
+    {
+        outputFile.write(NewFile, NewFileLength);
+        printf("File received and saved");
+    }
+    else
+        printf("error receiving file");
 
 
     closesocket(s);
