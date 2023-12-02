@@ -14,7 +14,6 @@
 
 #define BufferLength 9319
 #define PacketSize 1024
-#define TIMEOUT 2000 // Timeout in milliseconds
 
 /** declare variable wsa **/
 WSADATA wsa;
@@ -35,9 +34,6 @@ char fileName[BufferLength] = "test.jpg";
 
 int numPackets;
 char sendData;
-int i;
-char packet[PacketSize + sizeof(int)];
-int recv_len;
 
 int main() {
 
@@ -90,6 +86,10 @@ int main() {
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
+
+
+
+
     std::string fileName = "test.jpg";
     std::ifstream inputFile(fileName, std::ios::binary);
 
@@ -101,6 +101,7 @@ int main() {
     }
 
     char buffer[BufferLength];
+    char packet[PacketSize + sizeof(int)];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     inputFile.read(buffer, BufferLength);
@@ -108,7 +109,7 @@ int main() {
     //std::cout << "File sent successfully" << std::endl;
 
     //break file on buffer into packs then send them
-    for (i = 0; i < numPackets; i++) {
+    for (int i = 0; i < numPackets; i++) {
        int j = 0;
        if (i < 9) { //for packets 1-9
            while (j < PacketSize) {
@@ -117,22 +118,19 @@ int main() {
            }
 
            packet[PacketSize + 1] = char(i);
-           printf("\npacket[%d] = %d", PacketSize + sizeof(int), packet[PacketSize + 1]);
+           printf("\npacket[%d] = %d", PacketSize + 1, packet[PacketSize + 1]);
            sendto(s, packet, PacketSize + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
            printf("\nsent packet #%d\n", i);
-
        }
        if (i == 9) { //for packet 10
            while (j < 10 * PacketSize - BufferLength) {
                packet[j] = buffer[j + PacketSize * i];
                j += 1;
            }
-
            packet[10 * PacketSize - BufferLength + 1] = i;
            printf("\npacket[%d] = %d", 10 * PacketSize - BufferLength + 1, i);
            sendto(s, packet, 10 * PacketSize - BufferLength + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
            printf("\nsent packet #%d\n", i);
-
        }
     }
     
