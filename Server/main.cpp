@@ -11,91 +11,65 @@
 
 #define BufferLength 9319 //our buffer length
 #define PACKETSIZE 1024
-/** declare variable wsa **/
-WSADATA wsa;
-/** declare socket variables – needed for sockets on both client and sever **/
-struct sockaddr_in server;
-SOCKET s;
-int slen = sizeof(server);
-int recv_len;
-unsigned long noBlock;
-char buffer[BufferLength];
 
-//char fileLen[9320];
+int receiveIntFrom(SOCKET serverSocket, sockaddr_in& clientAddr) {
+    int value;
+    int clientAddrSize = sizeof(clientAddr);
+    recvfrom(serverSocket, reinterpret_cast<char*>(&value), sizeof(int), 0,
+        reinterpret_cast<sockaddr*>(&clientAddr), &clientAddrSize);
+    return value;
+}
 
+void sendIntTo(SOCKET serverSocket, const sockaddr_in& clientAddr, int value) {
+    sendto(serverSocket, reinterpret_cast<const char*>(&value), sizeof(int), 0,
+        reinterpret_cast<const sockaddr*>(&clientAddr), sizeof(clientAddr));
+}
 
 int main() {
-
-    /****** INITIALIZING WINSOCK ***********/
-    printf("\n****** INITIALIZING WINSOCK ***********");
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        printf("Failed. Error Code : %d", WSAGetLastError());
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "Error: WSAStartup failed\n";
         return 1;
     }
-    else printf("\nWINSOCK INITIALIZED");
 
-    /*****  CREATE SERVER SOCKET  ****/
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
-        printf("Could not create socket : %d", WSAGetLastError());
+    SOCKET serverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (serverSocket == INVALID_SOCKET) {
+        std::cerr << "Error: Failed to create socket\n";
+        WSACleanup();
+        return 1;
     }
-    else printf("\nUDP SERVER SOCKET CREATED");
-    
-    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // or INADDR_ANY
-    server.sin_family = AF_INET;
-    server.sin_port = htons(80);
 
-    /***** BIND SOCKET ****/
-    if (bind(s, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR) {
-        printf("Bind failed with error code : %d", WSAGetLastError());
-        exit(EXIT_FAILURE);
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_port = htons(12345);
+
+    if (bind(serverSocket, reinterpret_cast<const sockaddr*>(&serverAddr), sizeof(serverAddr)) == SOCKET_ERROR) {
+        std::cerr << "Error: Bind failed\n";
+        closesocket(serverSocket);
+        WSACleanup();
+        return 1;
     }
-    puts("\nSERVER SOCKET BIND SUCCESS");
-
-    /***** WAIT FOR DATA ****/
-    printf("\nWaiting for data...");
-
-    recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
-    std::string filename = buffer;
-    std::ofstream outputFile(filename, std::ios::binary);
-    int seqNum = 0;
-   
+    // Below is where we change code, do not change anything above
 
 
-	while (1)
-	{
-		printf("Waiting for data...");
-		fflush(stdout);
 
-		//clear the buffer by filling null, it might have previously received data
-		memset(buffer, '\0', BufferLength);
 
-		//try to receive some data, this is a blocking call
+    sockaddr_in clientAddr;
+    int receivedData = receiveIntFrom(serverSocket, clientAddr);
+    std::cout << "Received data from client: " << receivedData << std::endl;
 
-        int bytesRead = recvfrom(s, buffer, BufferLength, 0, (struct sockaddr*)&server, &slen);
-        if (bytesRead <= 0)
-        {
-            break;
-        }
-        int receivedSeqNum;
-        memcpy(&receivedSeqNum, buffer, sizeof(int));
+    // Echo back the received data to the client
+    sendIntTo(serverSocket, clientAddr, receivedData);
 
-        if (receivedSeqNum == seqNum) {
-            outputFile.write(buffer + sizeof(int), bytesRead - sizeof(int));
 
-            sendto(s, (char*)seqNum, sizeof(int), 0, (struct sockaddr*)&server, slen);
 
-            seqNum++;
-        }
-        else {
-            sendto(s, (char*)seqNum, sizeof(int), 0, (struct sockaddr*)&server, slen);
-        }
 
-	}
 
-    printf("Success");
-    outputFile.close();
-	closesocket(s);
-	WSACleanup();
 
+
+
+    closesocket(serverSocket);
+    WSACleanup();
     return 0;
 }

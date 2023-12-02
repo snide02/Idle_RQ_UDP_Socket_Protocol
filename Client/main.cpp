@@ -13,116 +13,67 @@
 #pragma comment(lib, "ws2_32.lib")
 
 #define BufferLength 9319
+#define PACKETSIZE 1024
 
-/** declare variable wsa **/
-WSADATA wsa;
-/** declare socket variables – needed for sockets on both client and sever **/
-struct sockaddr_in si_other;
-SOCKET s;
-int slen = sizeof(si_other);
+int receiveIntFrom(SOCKET clientSocket, sockaddr_in& serverAddr) {
+    int value;
+    int serverAddrSize = sizeof(serverAddr);
+    recvfrom(clientSocket, reinterpret_cast<char*>(&value), sizeof(int), 0,
+        reinterpret_cast<sockaddr*>(&serverAddr), &serverAddrSize);
+    return value;
+}
 
-unsigned long noBlock;
-//char buffer[BufferLength] = "hello world";
-
- /**file variable **/
-unsigned long fileLen; // length of image file
-FILE *fp; // file pointer
-char *buffer; // pointer to character array
-
-char fileName[BufferLength] = "test.jpg";
+void sendIntTo(SOCKET clientSocket, const sockaddr_in& serverAddr, int value) {
+    sendto(clientSocket, reinterpret_cast<const char*>(&value), sizeof(int), 0,
+        reinterpret_cast<const sockaddr*>(&serverAddr), sizeof(serverAddr));
+}
+struct Packet {
+    int seqNum;
+    char data[PACKETSIZE];
+};
 
 int main() {
-
-    //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
-    fp = fopen(fileName, "rb");
-    
-    if (fp == NULL) {
-        printf("\n Error Opening Image - read");
-        fclose(fp);
-        exit(0);
-    }
-
-    /*** ALLOCATE MEMORY (BUFFER) TO HOLD IMAGE *****/
-    fseek(fp, 0, SEEK_END); //go to EOF
-    fileLen = ftell(fp); // determine length
-    fseek(fp, 0, SEEK_SET); //reset fp
-    buffer = (char*)malloc(fileLen + 1); //allocated memory
-    if (!buffer) {
-        printf("\n memory error allocating buffer");
-        fclose(fp);
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "Error: WSAStartup failed\n";
         return 1;
     }
 
-    /********* READ FILE DATA INTO BUFFER AND CLOSE FILE *************/
-    fread(buffer, fileLen, 1, fp);
-    fclose(fp);
-    printf("\nFile Length:  %d \n", fileLen);
-
-    /****** INITIALIZING WINSOCK ***********/
-    printf("\n****** INITIALIZING WINSOCK ***********");
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        printf("Failed. Error Code : %d", WSAGetLastError());
-        return 1;
-    }
-    else printf("\nWINSOCK INITIALIZED");
-
-    /*****  CREATE CLIENT SOCKET  ****/
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
-        printf("Could not create socket : %d", WSAGetLastError());
-    }
-    printf("UDP CLIENT SOCKEET CREATED.\n");
-
-    /*****  INITIALIZE SOCKET STRUCT   - Non Blocking Client ****/
-    noBlock = 1;
-    ioctlsocket(s, FIONBIO, &noBlock);
-    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //current IP address is a dummy address, need to add actual address
-    si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(80);
-
-
-
-
-
-    std::string fileName = "test.jpg";
-    std::ifstream inputFile(fileName, std::ios::binary);
-
-    if (!inputFile.is_open()) {
-        std::cerr << "Error Opening file: " << fileName << std::endl;
-        closesocket(s);
+    SOCKET clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (clientSocket == INVALID_SOCKET) {
+        std::cerr << "Error: Failed to create socket\n";
         WSACleanup();
         return 1;
     }
 
-    char buffer[BufferLength];
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serverAddr.sin_port = htons(12345);
 
-    sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
-    int seqNum = 0;
+    // Below is where we change code, do not change anything above
 
-    while (!inputFile.eof()) {
-        inputFile.read(buffer + sizeof(int), BufferLength - sizeof(int));
-        int bytesRead = static_cast<int>(inputFile.gcount());
 
-        memcpy(buffer, &seqNum, sizeof(int));
 
-        sendto(s, buffer, bytesRead + sizeof(int), 0, (struct sockaddr*)&si_other, sizeof(si_other));
-        int ack;
-        recvfrom(s, (char *)&ack, sizeof(int), 0, nullptr, nullptr);
 
-        if (ack != seqNum) {
-            --seqNum;
-        }
-        else {
-            seqNum++;
-        }
-    }
-   
+    int dataToSend = 123; // Replace with the actual value you want to send
+    sendIntTo(clientSocket, serverAddr, dataToSend);
 
-    inputFile.close();
-    closesocket(s);
+    // Receive the echoed data from the server
+    sockaddr_in receivedFromAddr;
+    int receivedData = receiveIntFrom(clientSocket, receivedFromAddr);
+
+    std::cout << "Received echoed data from server: " << receivedData << std::endl;
+
+
+
+
+
+
+
+
+    closesocket(clientSocket);
     WSACleanup();
-
-
     return 0;
 }
-
 
