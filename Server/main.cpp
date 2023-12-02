@@ -41,7 +41,7 @@ int main() {
     }
     else printf("\nUDP SERVER SOCKET CREATED");
 
-    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // or INADDR_ANY
+    server.sin_addr.s_addr = htonl(INADDR_ANY);//inet_addr("127.0.0.1"); // or INADDR_ANY
     server.sin_family = AF_INET;
     server.sin_port = htons(80);
 
@@ -68,7 +68,7 @@ int main() {
     //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
     while (count < 10)
     {
-        printf("Waiting for data...");
+        printf("\nWaiting for data...");
         fflush(stdout);
 
         //clear the buffer by filling null, it might have previously received data
@@ -76,6 +76,7 @@ int main() {
 
         //recieve packet from client
         recv_len = recvfrom(s, buffer, PACKETSIZE + 2, 0, (struct sockaddr*)&server, &slen);
+        printf("\nReceived packet from %s:%d", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
 
         int seqNum;
         int AckNum;
@@ -125,7 +126,7 @@ int main() {
 
 
         //print details of the client/peer and the data received
-    //printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
+    printf("\nReceived packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
     //printf("Data: %s\n", buffer);
     //printf("\n %s", fileLen);
     //now reply the client with the same data
@@ -138,11 +139,11 @@ int main() {
     }
 
     //reaseble packet 
-    printf("File Length %d", NewFileLength);
+    printf("\nFile Length %d", NewFileLength);
     if (NewFileLength > 0)
     {
         outputFile.write(NewFile, NewFileLength);
-        printf("File received and saved");
+        printf("\nFile received and saved");
     }
     else
         printf("error receiving file");
