@@ -84,7 +84,7 @@ int main() {
     noBlock = 1;
     ioctlsocket(s, FIONBIO, &noBlock);
 
-    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //current IP address is a dummy address, need to add actual address
+    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //127.0.0.1 - current IP address is a dummy address, need to add actual address
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
@@ -157,10 +157,10 @@ int main() {
                         printf("\n Timeout Initialized");
                         timeout = 1;
                     }
-                }
+                } 
             }
             else if (squenceNum + 48 == recievedACK) {
-                printf("\n ACK %c recieved", recievedACK);
+                printf("\n ACK %c recieved\n", recievedACK);
                 rcvdACKSuccess = 1;
             }
 
