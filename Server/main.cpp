@@ -26,6 +26,7 @@ int NewFileLength = 0;
 
 
 int main() {
+
     /****** INITIALIZING WINSOCK ***********/
     printf("\n****** INITIALIZING WINSOCK ***********");
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
@@ -78,27 +79,21 @@ int main() {
 
         int seqNum;
         int AckNum;
-        if (count == 9) {
-            seqNum = buffer[10 * PACKETSIZE - BufferLength + 1];
-        }
-        else {
-            seqNum = buffer[PACKETSIZE + 1];
-        }
-        printf("\nSequence Number: %d", seqNum);
-        printf("\nCount: %d", count);
+        
+        char recievedSequenceNumb = (char)buffer[recv_len - 1] + 48;
+        printf("\n the sequence number received is %c", recievedSequenceNumb);
 
-        if (count == seqNum) {
-
-            AckNum = seqNum;
-            sendto(s, (const char*)AckNum, PACKETSIZE, 0, (struct sockaddr*)&server, slen);
-            printf("\nAck #%d sending to Client\n", AckNum);
+        if (recievedSequenceNumb == (char)count + 48) {
 
             /**** COMBINE PACKET BITS ****/
             NewFileLength = NewFileLength + recv_len;
             int i = 0;
+
             //for packet 1-9
             if (count < 9) {
                 while (i < PACKETSIZE) {
+                    seqNum = buffer[PACKETSIZE + 1];
+
                     NewFile[i + count * PACKETSIZE] = buffer[i];
                     i++;
                 }
@@ -106,13 +101,27 @@ int main() {
             }
             //for packet 10
             if (count == 9) {
+                seqNum = buffer[10 * PACKETSIZE - BufferLength + 1];
+
                 while (i < 10 * PACKETSIZE - BufferLength) {
                     NewFile[i + count * PACKETSIZE] = buffer[i];
                     i++;
                 }
                 printf("\nPacket Length %d \n", recv_len);
             }
+            printf("\nSequence Number: %d", seqNum);
+            printf("\nCount: %d", count);
+
+            if (sendto(s, &recievedSequenceNumb, 1, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR) {
+
+                printf("\n sendto() failed with error code: %d", WSAGetLastError());
+                exit(EXIT_FAILURE);
+            }
+
         }
+
+      
+       
         
 
             //print details of the client/peer and the data received

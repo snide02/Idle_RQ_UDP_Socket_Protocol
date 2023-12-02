@@ -37,6 +37,14 @@ char sendData;
 
 int main() {
 
+    /****** INITIALIZING WINSOCK ***********/
+    printf("\n****** INITIALIZING WINSOCK ***********");
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        printf("Failed. Error Code : %d", WSAGetLastError());
+        return 1;
+    }
+    else printf("\nWINSOCK INITIALIZED\n");
+
     //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
     fp = fopen(fileName, "rb");
     
@@ -51,6 +59,7 @@ int main() {
     fileLen = ftell(fp); // determine length
     fseek(fp, 0, SEEK_SET); //reset fp
     buffer = (char*)malloc(fileLen + 1); //allocated memory
+
     if (!buffer) {
         printf("\n memory error allocating buffer");
         fclose(fp);
@@ -65,14 +74,6 @@ int main() {
     numPackets = fileLen / PacketSize + 1; //extra packet for the remaining data that doesn't fit into a whole packet.
     printf("Number of Packets: %d\n", numPackets);
 
-    /****** INITIALIZING WINSOCK ***********/
-    printf("\n****** INITIALIZING WINSOCK ***********");
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        printf("Failed. Error Code : %d", WSAGetLastError());
-        return 1;
-    }
-    else printf("\nWINSOCK INITIALIZED\n");
-
     /*****  CREATE CLIENT SOCKET  ****/
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         printf("Could not create socket : %d", WSAGetLastError());
@@ -82,6 +83,7 @@ int main() {
     /*****  INITIALIZE SOCKET STRUCT   - Non Blocking Client ****/
     noBlock = 1;
     ioctlsocket(s, FIONBIO, &noBlock);
+
     si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //current IP address is a dummy address, need to add actual address
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
@@ -110,6 +112,7 @@ int main() {
 
     //break file on buffer into packs then send them
     for (int i = 0; i < numPackets; i++) {
+       char squenceNum = (char)i;
        int j = 0;
        if (i < 9) { //for packets 1-9
            while (j < PacketSize) {
@@ -132,7 +135,39 @@ int main() {
            sendto(s, packet, 10 * PacketSize - BufferLength + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
            printf("\nsent packet #%d\n", i);
        }
+
+       int rcvdACKSuccess = 0;
+       char recievedACK;
+       while (rcvdACKSuccess == 0) {
+           int ticks1 = clock();
+
+           float elaspedTime = 0;
+           int timeout = 0;
+
+           if (recvfrom(s, &recievedACK, 1, 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
+               printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
+               rcvdACKSuccess = 0;
+               elaspedTime = 0;
+               while (timeout != 1) {
+                   int ticks2 = clock();
+                   float elapsedTime = (float)(ticks2 - ticks1) / CLOCKS_PER_SEC;
+                   printf("\nelaspedtime:%f", elapsedTime);
+                   Sleep(500);
+                   if (elapsedTime >= 2) {
+                       printf("\n Timeout Initialized");
+                       timeout = 1;
+                   }
+               }
+           }
+           else if (squenceNum + 48 == recievedACK) {
+               printf("\n ACK %c recieved", recievedACK);
+               rcvdACKSuccess = 1;
+           }
+
+       }
     }
+
+    
     
     std::cout << "File sent successfully" << std::endl;
 
