@@ -17,7 +17,7 @@
 
 /** declare variable wsa **/
 WSADATA wsa;
-/** declare socket variables – needed for sockets on both client and sever **/
+/** declare socket variables ï¿½ needed for sockets on both client and sever **/
 struct sockaddr_in si_other;
 SOCKET s;
 int slen = sizeof(si_other);
@@ -117,21 +117,51 @@ int main() {
                j += 1;
            }
 
-           packet[PacketSize + 1] = char(i);
-           printf("\npacket[%d] = %d", PacketSize + 1, packet[PacketSize + 1]);
-           sendto(s, packet, PacketSize + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
-           printf("\nsent packet #%d\n", i);
-       }
-       if (i == 9) { //for packet 10
-           while (j < 10 * PacketSize - BufferLength) {
-               packet[j] = buffer[j + PacketSize * i];
-               j += 1;
-           }
-           packet[10 * PacketSize - BufferLength + 1] = i;
-           printf("\npacket[%d] = %d", 10 * PacketSize - BufferLength + 1, i);
-           sendto(s, packet, 10 * PacketSize - BufferLength + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
-           printf("\nsent packet #%d\n", i);
-       }
+            packet[PacketSize + 1] = char(i);
+            printf("\npacket[%d] = %d", PacketSize + 1, packet[PacketSize + 1]);
+            sendto(s, packet, PacketSize + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+            printf("\nsent packet #%d\n", i);
+        }
+        if (i == 9) { //for packet 10
+            while (j < 10 * PacketSize - BufferLength) {
+                packet[j] = buffer[j + PacketSize * i];
+                j += 1;
+            }
+            packet[10 * PacketSize - BufferLength + 1] = i;
+            printf("\npacket[%d] = %d", 10 * PacketSize - BufferLength + 1, i);
+            sendto(s, packet, 10 * PacketSize - BufferLength + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+            printf("\nsent packet #%d\n", i);
+        }
+
+        int rcvdACKSuccess = 0;
+        char recievedACK;
+        while (rcvdACKSuccess == 0) {
+            int ticks1 = clock();
+
+            float elaspedTime = 0;
+            int timeout = 0;
+
+            if (recvfrom(s, &recievedACK, 1, 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
+                printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
+                rcvdACKSuccess = 0;
+                elaspedTime = 0;
+                while (timeout != 1) {
+                    int ticks2 = clock();
+                    float elapsedTime = (float)(ticks2 - ticks1) / CLOCKS_PER_SEC;
+                    printf("\nelaspedtime:%f", elapsedTime);
+                    Sleep(500);
+                    if (elapsedTime >= 2) {
+                        printf("\n Timeout Initialized");
+                        timeout = 1;
+                    }
+                }
+            }
+            else if (squenceNum + 48 == recievedACK) {
+                printf("\n ACK %c recieved", recievedACK);
+                rcvdACKSuccess = 1;
+            }
+
+        }
     }
     
     std::cout << "File sent successfully" << std::endl;
