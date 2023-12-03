@@ -83,7 +83,7 @@ int main() {
     noBlock = 1;
     ioctlsocket(s, FIONBIO, &noBlock);
 
-    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //127.0.0.1 - current IP address is a dummy address, need to add actual address
+    si_other.sin_addr.s_addr = inet_addr("127.0.0.1");//127.0.0.1 - current IP address is a dummy address, need to add actual address
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
@@ -135,7 +135,7 @@ int main() {
         //Sleep(1000);
         float t1 = clock(); // get the current number in ticks 
         float elapsedTime = 0;
-        bool timeout = false; //boolean variable to see if we timeout and also used to exit the loop if we receive the packet correctly.
+        bool timeout = false; //boolean variable to see if we timeout and also used to exit the loop if we receive the ack correctly.
         if (recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
             //printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
             printf("\nWaiting for the ACK, did not receive right away");
@@ -143,7 +143,7 @@ int main() {
                 float t2 = clock();
                 elapsedTime = (float)(t2 - t1) / CLOCKS_PER_SEC; // the amount of time in seconds that have elapsed since we try and receeive the ack and the current moment.
                 printf("\ntime elapsed:%f", elapsedTime);
-                recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen); // attempts to receive the packet again.
+                recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen); // attempts to receive the ack again.
                 Sleep(100); //Delay so that we are not printing every millisecond that the code is running
                 if (elapsedTime >= TIMEOUT_SEC) { //Checking if the elapsedtime in seconds is greater than our timer
                     printf("\n Timeout Initialized");
