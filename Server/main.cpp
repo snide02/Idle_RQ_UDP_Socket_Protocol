@@ -13,7 +13,7 @@
 #define PACKETSIZE 1024
 /** declare variable wsa **/
 WSADATA wsa;
-/** declare socket variables – needed for sockets on both client and sever **/
+/** declare socket variables ï¿½ needed for sockets on both client and sever **/
 struct sockaddr_in server;
 SOCKET s;
 int slen = sizeof(server);
@@ -115,11 +115,15 @@ int main() {
         }
         
 
-            //print details of the client/peer and the data received
-        //printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
-        //printf("Data: %s\n", buffer);
-        //printf("\n %s", fileLen);
-        //now reply the client with the same data
+
+
+
+
+        //print details of the client/peer and the data received
+    //printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
+    //printf("Data: %s\n", buffer);
+    //printf("\n %s", fileLen);
+    //now reply the client with the same data
         if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
         {
             printf("sendto() failed with error code : %d", WSAGetLastError());
@@ -131,12 +135,12 @@ int main() {
     //reaseble packet 
     printf("File Length %d", NewFileLength);
     if (NewFileLength > 0)
-           {
-               outputFile.write(NewFile, NewFileLength);
-               printf("File received and saved");
-           }
-           else
-               printf("error receiving file"); 
+    {
+        outputFile.write(NewFile, NewFileLength);
+        printf("File received and saved");
+    }
+    else
+        printf("error receiving file");
 
 
     closesocket(s);
