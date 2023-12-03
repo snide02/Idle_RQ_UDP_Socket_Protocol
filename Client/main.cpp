@@ -23,17 +23,15 @@ SOCKET s;
 int slen = sizeof(si_other);
 
 unsigned long noBlock;
-//char buffer[BufferLength] = "hello world";
 
  /**file variable **/
 unsigned long fileLen; // length of image file
 FILE* fp; // file pointer
 char* buffer; // pointer to character array
 
-char fileName[BufferLength] = "test.jpg";
-
 int numPackets;
-char sendData;
+
+const int TIMEOUT_SEC = 1; //timer to timeout in seconds
 
 int main() {
 
@@ -46,8 +44,7 @@ int main() {
     else printf("\nWINSOCK INITIALIZED\n");
 
     //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
-    fp = fopen(fileName, "rb");
-
+    fp = fopen("test.jpg", "rb");
     if (fp == NULL) {
         printf("\n Error Opening Image - read");
         fclose(fp);
@@ -74,6 +71,8 @@ int main() {
     numPackets = fileLen / PacketSize + 1; //extra packet for the remaining data that doesn't fit into a whole packet.
     printf("Number of Packets: %d\n", numPackets);
 
+    int lastPacketSize = numPackets * PacketSize - BufferLength;
+
     /*****  CREATE CLIENT SOCKET  ****/
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         printf("Could not create socket : %d", WSAGetLastError());
@@ -88,10 +87,6 @@ int main() {
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
-
-
-
-
     std::string fileName = "test.jpg";
     std::ifstream inputFile(fileName, std::ios::binary);
 
@@ -103,65 +98,68 @@ int main() {
     }
 
     char buffer[BufferLength];
-    char packet[BufferLength];
+    char packet[PacketSize + 2]; //creating a packet to be sent and accounting for the size of the sequence number.
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     inputFile.read(buffer, BufferLength);
-    //sendto(s, buffer, static_cast<int>(inputFile.gcount()), 0, (struct sockaddr*)&si_other, sizeof(si_other));
-    //std::cout << "File sent successfully" << std::endl;
 
     //break file on buffer into packs then send them
+    //i in this for loop is our packet number.
     for (int i = 0; i < numPackets; i++) {
-        char squenceNum = (char)i;
-        int j = 0;
+        char sequenceNum = (char)i;
+        int j = 0; // this j resets to 0 so that we can reassign the value of the packet to new data.
         if (i < 9) { //for packets 1-9
             while (j < PacketSize) {
-                packet[j] = buffer[j + PacketSize * i];
+                //reassigning the packet value to the shifted area in the buffer based upon the packet number which in our case is i
+                packet[j] = buffer[j + PacketSize * i];  
                 j += 1;
             }
-
-            packet[PacketSize + 1] = char(i);
+            packet[PacketSize + 1] = i; //Adding the sequence number to the endo f the packet
             printf("\npacket[%d] = %d", PacketSize + 1, packet[PacketSize + 1]);
             sendto(s, packet, PacketSize + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
             printf("\nsent packet #%d\n", i);
         }
         if (i == 9) { //for packet 10
-            while (j < 10 * PacketSize - BufferLength) {
+            while (j < lastPacketSize) {
+                //reassigning the packet value to the shifted area in the buffer based upon the packet number which in our case is i
                 packet[j] = buffer[j + PacketSize * i];
                 j += 1;
             }
-            packet[10 * PacketSize - BufferLength + 1] = i;
-            printf("\npacket[%d] = %d", 10 * PacketSize - BufferLength + 1, i);
-            sendto(s, packet, 10 * PacketSize - BufferLength + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
+            packet[lastPacketSize + 1] = i; //Adding the sequence number to the endo f the packet
+            printf("\npacket[%d] = %d", lastPacketSize + 2, i);
+            sendto(s, packet, lastPacketSize + 2, 0, (struct sockaddr*)&si_other, sizeof(si_other));
             printf("\nsent packet #%d\n", i);
         }
 
         char recievedACK;
         //Sleep(1000);
-        int ticks1 = clock();
+        int t1 = clock(); // get the current number in ticks 
         float elapsedTime = 0;
-        bool timeout = false;
+        bool timeout = false; //boolean variable to see if we timeout and also used to exit the loop if we receive the packet correctly.
         if (recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
             printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
             while (!timeout) {
-                int ticks2 = clock();
-                elapsedTime = (float)(ticks2 - ticks1) / CLOCKS_PER_SEC;
+                int t2 = clock();
+                elapsedTime = (float)(t2 - t1) / CLOCKS_PER_SEC; // the amount of time in seconds that have elapsed since we try and receeive the ack and the current moment.
                 printf("\nelaspedtime:%f", elapsedTime);
-                Sleep(500);
-                if (elapsedTime >= 2) {
+                recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen); // attempts to receive the packet again.
+                Sleep(500); //Delay so that we are not printing every millisecond that the code is running
+                if (elapsedTime >= TIMEOUT_SEC) { //Checking if the elapsedtime in seconds is greater than our timer
                     printf("\n Timeout Initialized");
                     printf("\nResending Packet %d", i);
-                    i--;
-                    timeout = true;
+                    i--; // decrementing i so that it resends the current packet (since the for loop automatically increments i)
+                    timeout = true; // exitting the while loop because we timed out
+                }
+                else if (sequenceNum + 48 == recievedACK) {
+                    printf("\n ACK %c recieved\n", recievedACK);
+                    timeout = true; //exiting the while loop because we received the packet before time out.
                 }
             }
         }
-        else if (squenceNum + 48 == recievedACK) {
-            printf("\n ACK %c recieved\n", recievedACK);
+        else if (sequenceNum + 48 == recievedACK) {
+            printf("\n ACK %c recieved 1st try\n", recievedACK);
         }
     }
-
-
 
     std::cout << "File sent successfully" << std::endl;
 

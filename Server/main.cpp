@@ -65,7 +65,9 @@ int main() {
     std::string filename = buffer;
     std::ofstream outputFile(filename, std::ios::binary);
     int count = 0;
-    //buffer = (char*)malloc((fileLen + 1)); //allocated mmmory
+
+    int lastPacketSize = 10 * PACKETSIZE - BufferLength;
+    //number 10 here is the amount of packets we are receiving  
     while (count < 10)
     {
         printf("\nWaiting for data...");
@@ -101,7 +103,7 @@ int main() {
             }
             //for packet 10
             if (count == 9) {
-                seqNum = buffer[10 * PACKETSIZE - BufferLength + 1];
+                seqNum = buffer[lastPacketSize + 1];
 
                 while (i < 10 * PACKETSIZE - BufferLength) {
                     NewFile[i + count * PACKETSIZE] = buffer[i];
@@ -111,7 +113,7 @@ int main() {
             }
             printf("\nSequence Number: %d", seqNum);
             printf("\nCount: %d", count);
-            Sleep(1000);
+            Sleep(1000); // code to test time out by delaying the time it sends the ack back
             if (sendto(s, &recievedSequenceNumb, 1, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR) {
 
                 printf("\n sendto() failed with error code: %d", WSAGetLastError());
@@ -119,18 +121,8 @@ int main() {
             }
             count++;
         }
-        //print details of the client/peer and the data received
-    printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
-    //printf("Data: %s\n", buffer);
-    //printf("\n %s", fileLen);
-    //now reply the client with the same data
-    /*
-        if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
-        {
-            printf("sendto() failed with error code : %d", WSAGetLastError());
-            exit(EXIT_FAILURE);
-        }
-       */
+        else
+            printf("\nwrong sequence number received %c", recievedSequenceNumb);
     }
 
     //reaseble packet 
