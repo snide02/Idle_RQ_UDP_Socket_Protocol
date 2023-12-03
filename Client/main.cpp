@@ -17,7 +17,7 @@
 
 /** declare variable wsa **/
 WSADATA wsa;
-/** declare socket variables � needed for sockets on both client and sever **/
+/** declare socket variables – needed for sockets on both client and sever **/
 struct sockaddr_in si_other;
 SOCKET s;
 int slen = sizeof(si_other);
@@ -27,8 +27,8 @@ unsigned long noBlock;
 
  /**file variable **/
 unsigned long fileLen; // length of image file
-FILE *fp; // file pointer
-char *buffer; // pointer to character array
+FILE* fp; // file pointer
+char* buffer; // pointer to character array
 
 char fileName[BufferLength] = "test.jpg";
 
@@ -37,9 +37,17 @@ char sendData;
 
 int main() {
 
+    /****** INITIALIZING WINSOCK ***********/
+    printf("\n****** INITIALIZING WINSOCK ***********");
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        printf("Failed. Error Code : %d", WSAGetLastError());
+        return 1;
+    }
+    else printf("\nWINSOCK INITIALIZED\n");
+
     //OPEN IMAGE FILE AND COPY TO DATA STRUCTURE
     fp = fopen(fileName, "rb");
-    
+
     if (fp == NULL) {
         printf("\n Error Opening Image - read");
         fclose(fp);
@@ -51,6 +59,7 @@ int main() {
     fileLen = ftell(fp); // determine length
     fseek(fp, 0, SEEK_SET); //reset fp
     buffer = (char*)malloc(fileLen + 1); //allocated memory
+
     if (!buffer) {
         printf("\n memory error allocating buffer");
         fclose(fp);
@@ -65,14 +74,6 @@ int main() {
     numPackets = fileLen / PacketSize + 1; //extra packet for the remaining data that doesn't fit into a whole packet.
     printf("Number of Packets: %d\n", numPackets);
 
-    /****** INITIALIZING WINSOCK ***********/
-    printf("\n****** INITIALIZING WINSOCK ***********");
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
-        printf("Failed. Error Code : %d", WSAGetLastError());
-        return 1;
-    }
-    else printf("\nWINSOCK INITIALIZED\n");
-
     /*****  CREATE CLIENT SOCKET  ****/
     if ((s = socket(AF_INET, SOCK_DGRAM, 0)) == INVALID_SOCKET) {
         printf("Could not create socket : %d", WSAGetLastError());
@@ -82,7 +83,8 @@ int main() {
     /*****  INITIALIZE SOCKET STRUCT   - Non Blocking Client ****/
     noBlock = 1;
     ioctlsocket(s, FIONBIO, &noBlock);
-    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //current IP address is a dummy address, need to add actual address
+
+    si_other.sin_addr.s_addr = inet_addr("127.0.0.1"); //127.0.0.1 - current IP address is a dummy address, need to add actual address
     si_other.sin_family = AF_INET;
     si_other.sin_port = htons(80);
 
@@ -101,7 +103,7 @@ int main() {
     }
 
     char buffer[BufferLength];
-    char packet[PacketSize + sizeof(int)];
+    char packet[BufferLength];
 
     sendto(s, fileName.c_str(), fileName.length(), 0, (struct sockaddr*)&si_other, sizeof(si_other));
     inputFile.read(buffer, BufferLength);
@@ -110,12 +112,13 @@ int main() {
 
     //break file on buffer into packs then send them
     for (int i = 0; i < numPackets; i++) {
-       int j = 0;
-       if (i < 9) { //for packets 1-9
-           while (j < PacketSize) {
-               packet[j] = buffer[j + PacketSize * i];
-               j += 1;
-           }
+        char squenceNum = (char)i;
+        int j = 0;
+        if (i < 9) { //for packets 1-9
+            while (j < PacketSize) {
+                packet[j] = buffer[j + PacketSize * i];
+                j += 1;
+            }
 
             packet[PacketSize + 1] = char(i);
             printf("\npacket[%d] = %d", PacketSize + 1, packet[PacketSize + 1]);
@@ -157,13 +160,15 @@ int main() {
                 }
             }
             else if (squenceNum + 48 == recievedACK) {
-                printf("\n ACK %c recieved", recievedACK);
+                printf("\n ACK %c recieved\n", recievedACK);
                 rcvdACKSuccess = 1;
             }
 
         }
     }
-    
+
+
+
     std::cout << "File sent successfully" << std::endl;
 
     inputFile.close();
