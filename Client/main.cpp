@@ -143,7 +143,7 @@ int main() {
 
             float elaspedTime = 0;
             int timeout = 0;
-
+            Sleep(1000);
             if (recvfrom(s, &recievedACK, 1, 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
                 printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
                 rcvdACKSuccess = 0;

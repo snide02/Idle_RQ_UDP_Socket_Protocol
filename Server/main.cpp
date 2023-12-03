@@ -118,13 +118,8 @@ int main() {
                 printf("\n sendto() failed with error code: %d", WSAGetLastError());
                 exit(EXIT_FAILURE);
             }
-
+            count++;
         }
-
-
-
-
-
         //print details of the client/peer and the data received
     printf("Received packet from %s:%d\n", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
     //printf("Data: %s\n", buffer);
@@ -135,7 +130,7 @@ int main() {
             printf("sendto() failed with error code : %d", WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-        count++;
+       
     }
 
     //reaseble packet 
