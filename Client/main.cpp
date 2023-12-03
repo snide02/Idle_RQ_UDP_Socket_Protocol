@@ -31,7 +31,7 @@ char* buffer; // pointer to character array
 
 int numPackets;
 
-const int TIMEOUT_SEC = 1; //timer to timeout in seconds
+const float TIMEOUT_SEC = 2; //timer to timeout in seconds
 
 int main() {
 
@@ -133,17 +133,18 @@ int main() {
 
         char recievedACK;
         //Sleep(1000);
-        int t1 = clock(); // get the current number in ticks 
+        float t1 = clock(); // get the current number in ticks 
         float elapsedTime = 0;
         bool timeout = false; //boolean variable to see if we timeout and also used to exit the loop if we receive the packet correctly.
         if (recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
-            printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
+            //printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
+            printf("\nWaiting for the ACK, did not receive right away");
             while (!timeout) {
-                int t2 = clock();
+                float t2 = clock();
                 elapsedTime = (float)(t2 - t1) / CLOCKS_PER_SEC; // the amount of time in seconds that have elapsed since we try and receeive the ack and the current moment.
-                printf("\nelaspedtime:%f", elapsedTime);
+                printf("\ntime elapsed:%f", elapsedTime);
                 recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen); // attempts to receive the packet again.
-                Sleep(500); //Delay so that we are not printing every millisecond that the code is running
+                Sleep(100); //Delay so that we are not printing every millisecond that the code is running
                 if (elapsedTime >= TIMEOUT_SEC) { //Checking if the elapsedtime in seconds is greater than our timer
                     printf("\n Timeout Initialized");
                     printf("\nResending Packet %d", i);
@@ -162,11 +163,9 @@ int main() {
     }
 
     std::cout << "File sent successfully" << std::endl;
-
     inputFile.close();
     closesocket(s);
     WSACleanup();
-
 
     return 0;
 }
