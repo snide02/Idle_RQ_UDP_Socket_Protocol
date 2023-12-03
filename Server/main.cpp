@@ -79,7 +79,6 @@ int main() {
         printf("\nReceived packet from %s:%d", inet_ntoa(server.sin_addr), ntohs(server.sin_port));
 
         int seqNum;
-        int AckNum;
 
         char recievedSequenceNumb = (char)buffer[recv_len - 1] + 48;
         printf("\n the sequence number received is %c", recievedSequenceNumb);
@@ -112,7 +111,7 @@ int main() {
             }
             printf("\nSequence Number: %d", seqNum);
             printf("\nCount: %d", count);
-
+            Sleep(1000);
             if (sendto(s, &recievedSequenceNumb, 1, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR) {
 
                 printf("\n sendto() failed with error code: %d", WSAGetLastError());
@@ -125,12 +124,13 @@ int main() {
     //printf("Data: %s\n", buffer);
     //printf("\n %s", fileLen);
     //now reply the client with the same data
+    /*
         if (sendto(s, buffer, recv_len, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR)
         {
             printf("sendto() failed with error code : %d", WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-       
+       */
     }
 
     //reaseble packet 

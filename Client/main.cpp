@@ -136,34 +136,28 @@ int main() {
             printf("\nsent packet #%d\n", i);
         }
 
-        int rcvdACKSuccess = 0;
         char recievedACK;
-        while (rcvdACKSuccess == 0) {
-            int ticks1 = clock();
-
-            float elaspedTime = 0;
-            int timeout = 0;
-            Sleep(1000);
-            if (recvfrom(s, &recievedACK, 1, 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
-                printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
-                rcvdACKSuccess = 0;
-                elaspedTime = 0;
-                while (timeout != 1) {
-                    int ticks2 = clock();
-                    float elapsedTime = (float)(ticks2 - ticks1) / CLOCKS_PER_SEC;
-                    printf("\nelaspedtime:%f", elapsedTime);
-                    Sleep(500);
-                    if (elapsedTime >= 2) {
-                        printf("\n Timeout Initialized");
-                        timeout = 1;
-                    }
+        //Sleep(1000);
+        int ticks1 = clock();
+        float elapsedTime = 0;
+        bool timeout = false;
+        if (recvfrom(s, &recievedACK, sizeof(char), 0, (struct sockaddr*)&si_other, &slen) == SOCKET_ERROR) {
+            printf("\n recvfrom() failed with error code : %d", WSAGetLastError());
+            while (!timeout) {
+                int ticks2 = clock();
+                elapsedTime = (float)(ticks2 - ticks1) / CLOCKS_PER_SEC;
+                printf("\nelaspedtime:%f", elapsedTime);
+                Sleep(500);
+                if (elapsedTime >= 2) {
+                    printf("\n Timeout Initialized");
+                    printf("\nResending Packet %d", i);
+                    i--;
+                    timeout = true;
                 }
             }
-            else if (squenceNum + 48 == recievedACK) {
-                printf("\n ACK %c recieved\n", recievedACK);
-                rcvdACKSuccess = 1;
-            }
-
+        }
+        else if (squenceNum + 48 == recievedACK) {
+            printf("\n ACK %c recieved\n", recievedACK);
         }
     }
 
