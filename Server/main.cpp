@@ -83,7 +83,7 @@ int main() {
         int seqNum;
 
         char recievedSequenceNumb = (char)buffer[recv_len - 1] + 48;
-        printf("\n the sequence number received is %c", recievedSequenceNumb);
+        printf("\nthe sequence number received is %c", recievedSequenceNumb);
 
         if (recievedSequenceNumb == (char)count + 48) {
 
@@ -113,7 +113,7 @@ int main() {
             }
             printf("\nSequence Number: %d", seqNum);
             printf("\nCount: %d", count);
-            Sleep(1000); // code to test time out by delaying the time it sends the ack back
+            //Sleep(1000); // code to test time out by delaying the time it sends the ack back
             if (sendto(s, &recievedSequenceNumb, 1, 0, (struct sockaddr*)&server, slen) == SOCKET_ERROR) {
 
                 printf("\n sendto() failed with error code: %d", WSAGetLastError());

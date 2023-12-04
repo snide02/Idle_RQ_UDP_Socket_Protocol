@@ -31,7 +31,7 @@ char* buffer; // pointer to character array
 
 int numPackets;
 
-const float TIMEOUT_SEC = 2; //timer to timeout in seconds
+const float TIMEOUT_SEC = 0.1; //timer to timeout in seconds
 
 int main() {
 
